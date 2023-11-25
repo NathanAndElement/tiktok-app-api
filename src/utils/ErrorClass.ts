@@ -5,9 +5,8 @@ export interface IErrorClass {
 }
 
 export class ErrorClass extends Error {
-	constructor(public message: string, public readableMessage: string, public statusCode: number) {
-		super(message);
-		this.readableMessage = readableMessage;
+	constructor(public readableMessage: string, public statusCode: number) {
+		super(readableMessage);
 		this.statusCode = statusCode;
 	}
 }

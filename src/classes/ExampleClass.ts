@@ -7,7 +7,7 @@ export default class ExampleClass {
 		const examples = await Example.find();
 
 		if (!examples.length) {
-			throw new ErrorClass('No examples found', 'No examples found', 404); // 404 Not Found
+			throw new ErrorClass('No examples found', 404); // 404 Not Found
 		}
 
 		return examples;

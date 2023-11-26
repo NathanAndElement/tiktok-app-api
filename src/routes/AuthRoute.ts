@@ -10,7 +10,13 @@ router.post(
 	'/register',
 	catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 		const newUser = await AuthClass.Register(req.body);
-		res.status(200).send(newUser);
+
+		req.login(newUser, (loginErr) => {
+			if (loginErr) {
+				return next(new ErrorClass('Invalid username or password', 400));
+			}
+			return res.status(200).send(newUser);
+		});
 	})
 );
 
@@ -19,7 +25,7 @@ router.post('/login', (req, res, next) => {
 		if (!user) {
 			return next(new ErrorClass('Invalid username or password', 400));
 		}
-		(req as any).login(user, (loginErr) => {
+		req.login(user, (loginErr) => {
 			if (loginErr) {
 				return next(new ErrorClass('Invalid username or password', 400));
 			}
@@ -29,7 +35,7 @@ router.post('/login', (req, res, next) => {
 });
 
 router.get('/logout', (req, res, next) => {
-	(req as any).logout(function (err) {
+	req.logout(function (err) {
 		if (err) {
 			return next(new ErrorClass('Error logging out', 500));
 		}
@@ -38,7 +44,7 @@ router.get('/logout', (req, res, next) => {
 });
 
 router.get('/secret', isAuthenticated, (req, res, next) => {
-	res.send({ message: 'secret' });
+	res.send({ message: 'secret', user: res.locals.currentUser });
 });
 
 module.exports = router;

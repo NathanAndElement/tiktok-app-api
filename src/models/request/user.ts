@@ -1,15 +1,17 @@
 import Joi from 'joi';
 
 export interface ICreateUser {
-	name: string;
+	email: string;
+	username: string;
 	password: string;
 }
 export interface ILoginUser {
-	name: string;
+	email: string;
 	password: string;
 }
 
 export const createUserSchema = Joi.object<ICreateUser, true>({
-	name: Joi.string().required(),
+	email: Joi.string().required(),
+	username: Joi.string().required(),
 	password: Joi.string().required(),
 });

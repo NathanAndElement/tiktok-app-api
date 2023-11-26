@@ -1,49 +1,44 @@
 import express, { NextFunction, Request, Response } from 'express';
-import ExampleClass from '../classes/ExampleClass';
 import { catchAsync } from '../utils/catchAsync';
 import AuthClass from '../classes/AuthClass';
-import { SessionData } from 'express-session';
+import passport from 'passport';
+import { ErrorClass } from '../utils/ErrorClass';
 import { isAuthenticated } from '../middleware/auth';
 const router = express.Router({ mergeParams: true });
 
 router.post(
 	'/register',
-	catchAsync(async (req: Request, res, next) => {
-		const user = await AuthClass.Register(req.body);
-		if (user) {
-			(req as any).session.user_id = user._id;
-		}
-		res.send(user);
+	catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+		const newUser = await AuthClass.Register(req.body);
+		res.status(200).send(newUser);
 	})
 );
 
-router.post(
-	'/login',
-	catchAsync(async (req, res, next) => {
-		const { user, verified } = await AuthClass.Login(req.body);
-		if (verified) {
-			(req as any).session.user_id = user._id;
+router.post('/login', (req, res, next) => {
+	passport.authenticate('local', function (err, user, info) {
+		if (!user) {
+			return next(new ErrorClass('Invalid username or password', 400));
 		}
-		res.send({ loggedIn: verified });
-	})
-);
+		(req as any).login(user, (loginErr) => {
+			if (loginErr) {
+				return next(new ErrorClass('Invalid username or password', 400));
+			}
+			return res.send({ success: true, message: 'authentication succeeded' });
+		});
+	})(req, res, next);
+});
 
-router.get('/logout', (req, res) => {
-	req.session.destroy((err: Error) => {
+router.get('/logout', (req, res, next) => {
+	(req as any).logout(function (err) {
 		if (err) {
-			res.status(500).send('Could not log out');
-		} else {
-			res.send('Logged out');
+			return next(new ErrorClass('Error logging out', 500));
 		}
+		res.send({ success: true, message: 'logout succeeded' });
 	});
 });
 
-router.get(
-	'/secret',
-	isAuthenticated,
-	catchAsync(async (req, res, next) => {
-		res.send({ message: 'Secret page' });
-	})
-);
+router.get('/secret', isAuthenticated, (req, res, next) => {
+	res.send({ message: 'secret' });
+});
 
 module.exports = router;

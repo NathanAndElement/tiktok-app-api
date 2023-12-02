@@ -6,7 +6,11 @@ export default class AuthClass {
 	static async Register(details: ICreateUser) {
 		try {
 			await createUserSchema.validateAsync(details);
-			const user = new User({ email: details.email, username: details.username });
+			const user = new User({
+				email: details.email,
+				username: details.username,
+				email_verified: true,
+			});
 			const newUser = await User.register(user, details.password);
 			return newUser;
 		} catch (e) {

@@ -9,6 +9,51 @@ var MagicLinkStrategy = require('passport-magic-link').Strategy;
 const router = express.Router({ mergeParams: true });
 
 router.post(
+	'/phone-link/start',
+	isAuthenticated,
+	catchAsync(async (req, res, next) => {
+		await AuthClass.LinkPhoneStart(req.body.countryCode, req.body.number);
+
+		res.send({ message: 'phone link started' });
+	})
+);
+
+router.post(
+	'/phone-link/end',
+	isAuthenticated,
+	catchAsync(async (req, res, next) => {
+		await AuthClass.PhoneLinkEnd(
+			req.body.code,
+			req.body.countryCode,
+			req.body.number,
+			res.locals.currentUser
+		);
+
+		res.send({ message: 'phone linked' });
+	})
+);
+
+router.post(
+	'/phone-unlink/start',
+	isAuthenticated,
+	catchAsync(async (req, res, next) => {
+		await AuthClass.UnlinkPhoneStart(res.locals.currentUser);
+
+		res.send({ message: 'phone unlink started' });
+	})
+);
+
+router.post(
+	'/phone-unlink/end',
+	isAuthenticated,
+	catchAsync(async (req, res, next) => {
+		await AuthClass.PhoneUnlinkEnd(req.body.code, res.locals.currentUser);
+
+		res.send({ message: 'phone unlinked' });
+	})
+);
+
+router.post(
 	'/register',
 	(passport as any).authenticate('magiclink', { action: 'requestToken' }),
 	catchAsync(async (req, res, next) => {
@@ -62,7 +107,7 @@ router.post(
 				req.body.email,
 				req.body.newPassword
 			);
-			res.send({ verified, resetPassword, message: 'password reset' });
+			res.send({ resetPassword, message: 'password reset' });
 		}
 		res.send({ verified, message: 'password not reset' });
 	})

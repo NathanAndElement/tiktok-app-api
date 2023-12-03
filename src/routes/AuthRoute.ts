@@ -3,7 +3,8 @@ import passport from 'passport';
 import { ErrorClass } from '../utils/ErrorClass';
 import { isAuthenticated, returnTo } from '../middleware/auth';
 import User from '../models/db/User';
-import { catchAsync } from '~/utils/catchAsync';
+import { catchAsync } from '../utils/catchAsync';
+import AuthClass from '../classes/AuthClass';
 var MagicLinkStrategy = require('passport-magic-link').Strategy;
 const router = express.Router({ mergeParams: true });
 
@@ -18,7 +19,6 @@ router.post(
 			if (existingUser) {
 				throw new ErrorClass('User already exists', 400);
 			}
-
 			res.send({ success: true, message: 'magic link sent' });
 		} catch (error) {
 			throw new ErrorClass(error, 500);
@@ -34,16 +34,50 @@ router.get(
 	})
 );
 
-router.post('/login', returnTo, (req, res, next) => {
+router.post(
+	'/reset-password',
+	catchAsync(async (req, res, next) => {
+		await AuthClass.ResetPassword(req.body.email);
+		res.send({ success: true, message: 'password reset email sent' });
+	})
+);
+
+router.get(
+	'/reset-password/verify',
+	catchAsync(async (req, res, next) => {
+		res.send({
+			success: true,
+			message: 'Send new password to /auth/reset-password/verify/confirm',
+		});
+	})
+);
+
+router.post(
+	'/reset-password/verify/confirm',
+	catchAsync(async (req, res, next) => {
+		const verified = await AuthClass.VerifyResetPassword(req.body.token);
+
+		if (verified) {
+			const resetPassword = await AuthClass.ResetPasswordConfirm(
+				req.body.email,
+				req.body.newPassword
+			);
+			res.send({ verified, resetPassword, message: 'password reset' });
+		}
+		res.send({ verified, message: 'password not reset' });
+	})
+);
+
+router.post('/login', (req, res, next) => {
 	passport.authenticate('local', function (err, user, info) {
 		if (!user) {
 			return next(new ErrorClass('Invalid username or password', 400));
 		}
 		req.login(user, (loginErr) => {
 			if (loginErr) {
-				return next(new ErrorClass(loginErr, 400));
+				return next(new ErrorClass(loginErr.message, 400));
 			}
-			const redirectUrl = res.locals.returnTo || '/';
+			const redirectUrl = res?.locals?.returnTo ?? '/';
 
 			return res.redirect(redirectUrl);
 		});

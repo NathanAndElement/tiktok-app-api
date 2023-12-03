@@ -1,22 +1,26 @@
 import 'dotenv/config';
 import './db';
 import Routes from './routes';
-const { auth } = require('express-openid-connect');
 import express, { Express, NextFunction, Request, Response } from 'express';
 import { IErrorClass } from './utils/ErrorClass';
+import './passport';
+import 'dotenv/config';
+import './db';
 import passport from 'passport';
 import LocalStrategy from 'passport-local';
 import User from './models/db/User';
+import sendgrid from '@sendgrid/mail';
+import AuthClass from './classes/AuthClass';
+var MagicLinkStrategy = require('passport-magic-link').Strategy;
+const { auth } = require('express-openid-connect');
 const session = require('express-session');
 const app: Express = express();
 var MagicLinkStrategy = require('passport-magic-link').Strategy;
-import sendgrid from '@sendgrid/mail';
-import passportLocalMongoose from 'passport-local-mongoose';
-import './passport';
-import AuthClass from './classes/AuthClass';
 
-sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(session({ secret: process.env.SECRET }));
+sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -66,9 +70,6 @@ passport.use(
 		}
 	)
 );
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 app.use((req: Request, res: Response, next: NextFunction) => {
 	res.locals.currentUser = req.user;
